@@ -30,86 +30,92 @@
 #	define GITWRAP_API Q_DECL_IMPORT
 #endif
 
-namespace Git
+#define GITWRAP_BEGIN_NS()			namespace Git {
+#define GITWRAP_END_NS()			}
+
+#define GITWRAP_BEGIN_INTERNAL_NS()	namespace Internal {
+#define GITWRAP_END_INTERNAL_NS()	}
+
+#define GITWRAP_INTERNAL(x)			Internal::x
+
+GITWRAP_BEGIN_NS()
+
+GITWRAP_API void initLibGit();
+GITWRAP_API void deinitLibGit();
+
+class Repository;
+class Index;
+
+GITWRAP_BEGIN_INTERNAL_NS()
+
+template< class T >
+class GitPtr
 {
+public:
+	GitPtr();
+	GitPtr( const GitPtr< T >& o );
+	GitPtr( T* o );
+	~GitPtr();
 
-	GITWRAP_API void initLibGit();
-	GITWRAP_API void deinitLibGit();
+	GitPtr< T >& operator=( const GitPtr< T >& o );
+	bool operator==( const GitPtr< T >& o ) const;
+	bool operator==( T* o ) const;
 
-	class Repository;
-	class Index;
+	T* operator->();
+	const T* operator->() const;
 
-	namespace Internal
-	{
+	T* operator*();
+	const T* operator*() const;
 
-		template< class T >
-		class GitPtr
-		{
-		public:
-			GitPtr();
-			GitPtr( const GitPtr< T >& o );
-			GitPtr( T* o );
-			~GitPtr();
+	operator bool() const;
+	operator T*();
+	operator const T*() const;
 
-			GitPtr< T >& operator=( const GitPtr< T >& o );
-			bool operator==( const GitPtr< T >& o ) const;
-			bool operator==( T* o ) const;
+private:
+	T* d;
+};
 
-			T* operator->();
-			const T* operator->() const;
+GITWRAP_END_INTERNAL_NS()
 
-			T* operator*();
-			const T* operator*() const;
+enum ObjectType
+{
+	otTree,
+	otCommit,
+	otBlob,
+	otTag,
 
-			operator bool() const;
-			operator T*();
-			operator const T*() const;
+	otAny = -1
+};
 
-		private:
-			T* d;
-		};
+enum TreeEntryAttributes
+{
+	UnkownAttr			= 0,
+	TreeAttr			= 0040000,
+	FileAttr			= 0100644,
+	FileExecutableAttr	= 0100755,
+	GitLinkAttr			= 0120000,
+	SubmoduleAttr		= 0160000
+};
 
-	}
+enum FileStatus	// These are 1:1 to libgit2 for now
+{
+	StatusCurrent				= 0,
 
-	enum ObjectType
-	{
-		otTree,
-		otCommit,
-		otBlob,
-		otTag,
+	StatusIndexNew				= (1 << 0),
+	StatusIndexModified			= (1 << 1),
+	StatusIndexDeleted			= (1 << 2),
 
-		otAny = -1
-	};
+	StatusWorkingTreeNew		= (1 << 3),
+	StatusWorkingTreeModified	= (1 << 4),
+	StatusWorkingTreeDeleted	= (1 << 5),
 
-	enum TreeEntryAttributes
-	{
-		UnkownAttr			= 0,
-		TreeAttr			= 0040000,
-		FileAttr			= 0100644,
-		FileExecutableAttr	= 0100755,
-		GitLinkAttr			= 0120000,
-		SubmoduleAttr		= 0160000
-	};
+	StatusIgnored				= (1 << 6)
+};
 
-	enum FileStatus	// These are 1:1 to libgit2 for now
-	{
-		StatusCurrent				= 0,
+typedef QFlags< FileStatus > FileStati;
 
-		StatusIndexNew				= (1 << 0),
-		StatusIndexModified			= (1 << 1),
-		StatusIndexDeleted			= (1 << 2),
+typedef QHash< QString, FileStati > StatusHash;
 
-		StatusWorkingTreeNew		= (1 << 3),
-		StatusWorkingTreeModified	= (1 << 4),
-		StatusWorkingTreeDeleted	= (1 << 5),
-
-		StatusIgnored				= (1 << 6)
-	};
-
-	typedef QFlags< FileStatus > FileStati;
-
-	typedef QHash< QString, FileStati > StatusHash;
-
-}
+GITWRAP_END_NS()
 
 #endif
